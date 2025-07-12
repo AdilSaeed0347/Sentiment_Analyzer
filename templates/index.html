@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Sentiment Classifier</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --gray-100: #f3f4f6;
+      --gray-300: #d1d5db;
+      --gray-700: #374151;
+      --gray-900: #111827;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      line-height: 1.6;
+      color: var(--gray-900);
+    }
+    
+    .container {
+      background-color: white;
+      padding: 2.5rem;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 580px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, var(--primary) 0%, #7c3aed 100%);
+    }
+    
+    h2 {
+      text-align: center;
+      margin-bottom: 1.75rem;
+      color: var(--gray-900);
+      font-size: 28px;
+      font-weight: 700;
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    
+    h2::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 1rem;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--gray-300);
+      resize: vertical;
+      transition: all 0.3s;
+      min-height: 120px;
+      font-family: inherit;
+    }
+    
+    textarea:focus {
+      border-color: var(--primary);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    
+    .char-count {
+      text-align: right;
+      font-size: 14px;
+      color: var(--gray-700);
+      margin-top: 4px;
+    }
+    
+    button {
+      margin-top: 1rem;
+      width: 100%;
+      padding: 0.9rem;
+      background-color: var(--primary);
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    
+    button:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button i {
+      font-size: 18px;
+    }
+    
+    .result {
+      margin-top: 2rem;
+      text-align: center;
+      font-size: 18px;
+      color: var(--gray-700);
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    
+    .prediction {
+      font-size: 24px;
+      font-weight: 700;
+      margin-top: 0.75rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+    
+    /* Sentiment-specific colors */
+    .positive {
+      color: var(--success);
+      background-color: rgba(16, 185, 129, 0.1);
+    }
+    
+    .negative {
+      color: var(--danger);
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+    
+    .sarcastic {
+      color: var(--warning);
+      background-color: rgba(245, 158, 11, 0.1);
+    }
+    
+    .risky {
+      color: #8b5cf6;
+      background-color: rgba(139, 92, 246, 0.1);
+    }
+    
+    .neutral {
+      color: var(--gray-700);
+      background-color: rgba(209, 213, 219, 0.3);
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(37, 99, 235, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 1.75rem;
+      }
+      
+      h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>AI Sentiment Classifier</h2>
+    <form id="sentimentForm">
+      <div class="form-group">
+        <textarea id="comment" rows="4" placeholder="Type your comment here..." required></textarea>
+        <div class="char-count"><span id="charCount">0</span>/500</div>
+      </div>
+      <button type="submit" id="submitBtn">
+        <i class="fas fa-robot"></i>
+        Predict Sentiment
+      </button>
+    </form>
+    <div class="result" id="result">
+      <!-- Results will appear here -->
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("sentimentForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const commentField = document.getElementById("comment");
+      const submitBtn = document.getElementById("submitBtn");
+      const resultDiv = document.getElementById("result");
+      const comment = commentField.value.trim();
+
+      if (!comment) return;
+
+      // Show loading state
+      submitBtn.innerHTML = '<div class="loading"></div> Analyzing...';
+      submitBtn.disabled = true;
+      resultDiv.innerHTML = '';
+
+      try {
+        const response = await fetch("/predict", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ comment })
+        });
+
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const data = await response.json();
+        
+        // Display result with appropriate styling
+        resultDiv.innerHTML = `
+          <p>Predicted Sentiment:</p>
+          <div class="prediction ${data.prediction.toLowerCase()}">
+            <i class="fas fa-${getSentimentIcon(data.prediction)}"></i>
+            ${data.prediction}
+          </div>
+          ${data.error ? `<p class="error">${data.error}</p>` : ''}
+        `;
+
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">Error: ${error.message}</p>
+        `;
+      } finally {
+        // Reset button
+        submitBtn.innerHTML = '<i class="fas fa-robot"></i> Predict Sentiment';
+        submitBtn.disabled = false;
+        commentField.value = "";
+        updateCharCount();
+      }
+    });
+
+    // Character count functionality
+    document.getElementById("comment").addEventListener("input", updateCharCount);
+    
+    function updateCharCount() {
+      const comment = document.getElementById("comment").value;
+      document.getElementById("charCount").textContent = comment.length;
+    }
+    
+    function getSentimentIcon(sentiment) {
+      switch(sentiment.toLowerCase()) {
+        case 'positive': return 'smile-beam';
+        case 'negative': return 'frown';
+        case 'sarcastic': return 'grin-tongue-wink';
+        case 'risky': return 'exclamation-triangle';
+        default: return 'meh';
+      }
+    }
+  </script>
+</body>
+</html>
